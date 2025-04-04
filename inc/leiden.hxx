@@ -535,7 +535,7 @@ inline bool leidenChangeCommunityOmpW(vector<K>& vcom, vector<W>& ctot, const G&
   K d = vcom[u];
   if (REFINE) {
     W ctotd = W();
-    #pragma omp atomic capture
+    #pragma omp critical
     {
       ctotd    = ctot[d];
       ctot[d] -= vtot[u];
@@ -649,18 +649,26 @@ inline int leidenMoveOmpW(vector<K>& vcom, vector<W>& ctot, vector<B>& vaff, vec
   W  el = W();
   for (; l<L;) {
     el = W();
-    #pragma omp parallel for schedule(dynamic, 2048) reduction(+:el)
-    for (K u=0; u<S; ++u) {
-      int t = omp_get_thread_num();
-      if (!x.hasVertex(u)) continue;
-      if (!fa(u) || !vaff[u]) continue;
-      if (REFINE && ctot[vcom[u]]>vtot[u]) continue;
-      leidenClearScanW(*vcs[t], *vcout[t]);
-      leidenScanCommunitiesW<false, REFINE>(*vcs[t], *vcout[t], x, u, vcom, vcob);
-      auto [c, e] = leidenChooseCommunity(x, u, vcom, vtot, ctot, *vcs[t], *vcout[t], M, R);
-      if (c && leidenChangeCommunityOmpW<REFINE>(vcom, ctot, x, u, c, vtot)) x.forEachEdgeKey(u, [&](auto v) { vaff[v] = B(1); });
-      vaff[u] = B();
-      el += e;  // l1-norm
+    #pragma omp parallel
+    {
+        W local_el = W();  // Initialize a local copy for each thread
+        #pragma omp for schedule(dynamic, 2048)
+        for (K u=0; u<S; ++u) {
+          int t = omp_get_thread_num();
+          if (!x.hasVertex(u)) continue;
+          if (!fa(u) || !vaff[u]) continue;
+          if (REFINE && ctot[vcom[u]]>vtot[u]) continue;
+          leidenClearScanW(*vcs[t], *vcout[t]);
+          leidenScanCommunitiesW<false, REFINE>(*vcs[t], *vcout[t], x, u, vcom, vcob);
+          auto [c, e] = leidenChooseCommunity(x, u, vcom, vtot, ctot, *vcs[t], *vcout[t], M, R);
+          if (c && leidenChangeCommunityOmpW<REFINE>(vcom, ctot, x, u, c, vtot)) x.forEachEdgeKey(u, [&](auto v) { vaff[v] = B(1); });
+          vaff[u] = B();
+          local_el += e;  // l1-norm
+        }
+        #pragma omp critical
+        {
+            el += local_el;  // Safely update shared variable
+        }
     }
     if (REFINE || fc(el, l++)) break;
   }
@@ -734,7 +742,7 @@ inline size_t leidenCommunityExistsOmpW(vector<A>& a, const G& x, const vector<K
     if (!x.hasVertex(u)) continue;
     K c = vcom[u];
     A m = A();
-    #pragma omp atomic capture
+    #pragma omp critical
     { m = a[c]; a[c] = A(1); }
     if (!m) ++C;
   }
@@ -899,7 +907,7 @@ template <class K>
 inline void leidenLookupCommunitiesOmpU(vector<K>& a, const vector<K>& vcom) {
   size_t S = a.size();
   #pragma omp parallel for schedule(static, 2048)
-  for (size_t u=0; u<S; ++u)
+  for (int u=0; u<S; ++u)
     a[u] = vcom[a[u]];
 }
 #endif

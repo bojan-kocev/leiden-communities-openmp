@@ -674,7 +674,7 @@ inline size_t louvainCommunityExistsOmpW(vector<A>& a, const G& x, const vector<
     if (!x.hasVertex(u)) continue;
     K c = vcom[u];
     A m = A();
-    #pragma omp atomic capture
+    #pragma omp critical
     { m = a[c]; a[c] = A(1); }
     if (!m) ++C;
   }
@@ -839,7 +839,7 @@ template <class K>
 inline void louvainLookupCommunitiesOmpU(vector<K>& a, const vector<K>& vcom) {
   size_t S = a.size();
   #pragma omp parallel for schedule(static, 2048)
-  for (size_t u=0; u<S; ++u)
+  for (int u=0; u<S; ++u)
     a[u] = vcom[a[u]];
 }
 #endif

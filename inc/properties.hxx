@@ -97,7 +97,7 @@ inline double edgeWeightOmp(const G& x) {
   using K = typename G::key_type;
   double a = 0;
   size_t S = x.span();
-  #pragma omp parallel for schedule(auto) reduction(+:a)
+  #pragma omp parallel for reduction(+:a)
   for (K u=0; u<S; ++u) {
     if (!x.hasVertex(u)) continue;
     a += edgeWeight(x, u);
@@ -159,7 +159,7 @@ inline double modularityCommunitiesOmp(const vector<V>& cin, const vector<V>& ct
   double a = 0;
   size_t C = cin.size();
   #pragma omp parallel for schedule(static) reduction(+:a)
-  for (size_t i=0; i<C; ++i)
+  for (int i=0; i<C; ++i)
     a += modularityCommunity(cin[i], ctot[i], M, R);
   return a;
 }

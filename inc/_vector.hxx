@@ -389,8 +389,8 @@ inline void fillValueU(vector<T>& a, const T& v) {
 template <class T>
 inline void fillValueOmpU(T *a, size_t N, const T& v) {
   ASSERT(a);
-  #pragma omp parallel for schedule(auto)
-  for (size_t i=0; i<N; ++i)
+  #pragma omp parallel for
+  for (int i=0; i<N; ++i)
     a[i] = v;
 }
 
@@ -502,8 +502,8 @@ inline void copyValuesW(vector<TA>& a, const vector<TX>& x) {
 template <class TA, class TX>
 inline void copyValuesOmpW(TA *a, const TX *x, size_t N) {
   ASSERT(a && x);
-  #pragma omp parallel for schedule(auto)
-  for (size_t i=0; i<N; ++i)
+  #pragma omp parallel for
+  for (int i=0; i<N; ++i)
     a[i] = x[i];
 }
 
@@ -742,8 +742,8 @@ template <class TX>
 inline size_t countValueOmp(const TX *x, size_t N, const TX& v) {
   ASSERT(x);
   size_t a = 0;
-  #pragma omp parallel for schedule(auto) reduction(+:a)
-  for (size_t i=0; i<N; ++i)
+  #pragma omp parallel for reduction(+:a)
+  for (int i=0; i<N; ++i)
     if (x[i]==v) ++a;
   return a;
 }

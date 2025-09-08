@@ -365,7 +365,7 @@ inline void csrAddEdgeU(vector<K>& degrees, vector<K>& edgeKeys, const vector<O>
 template <class O, class K>
 inline void csrAddEdgeOmpU(vector<K>& degrees, vector<K>& edgeKeys, const vector<O>& offsets, K u, K v) {
   O n = 0;
-  #pragma omp atomic capture
+  #pragma omp critical
   { n = degrees[u]; ++degrees[u]; }
   O i = offsets[u] + n;
   edgeKeys[i] = v;
@@ -407,7 +407,7 @@ inline void csrAddEdgeU(vector<K>& degrees, vector<K>& edgeKeys, vector<E>& edge
 template <class O, class K, class E>
 inline void csrAddEdgeOmpU(vector<K>& degrees, vector<K>& edgeKeys, vector<E>& edgeValues, const vector<O>& offsets, K u, K v, E w) {
   O n = 0;
-  #pragma omp atomic capture
+  #pragma omp critical
   { n = degrees[u]; ++degrees[u]; }
   O i = offsets[u] + n;
   edgeKeys[i]   = v;
